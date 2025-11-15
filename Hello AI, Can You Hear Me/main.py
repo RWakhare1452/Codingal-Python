@@ -130,4 +130,56 @@ class AudioProcessor:
             plt.tight_layout()
 
             if save_plot:
-                    
+                try:
+                    img_filename = f"waveform_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
+                    plt.savefig(img_filename)
+                    print(f"✅ Waveform image saved to {img_filename}")
+                except Exception as e:
+                    print(f"Error saving waveform image: {e}")
+            else:
+                try:
+                    plt.show()
+                except Exception:
+                    # In headless environments plt.show() may fail — save to a file instead
+                    img_filename = f"waveform_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
+                    try:
+                        plt.savefig(img_filename)
+                        print(f"✅ Waveform image saved to {img_filename}")
+                    except Exception as e:
+                        print(f"Could not display or save waveform: {e}")
+
+        except Exception as e:
+            print(f"Error plotting waveform: {e}")
+            return False
+
+        return True
+
+
+if __name__ == "__main__":
+    recorder = AudioRecorder()
+
+    print("Press Enter to start recording...")
+    input()
+    print("Recording started. Press Enter to stop.")
+
+    data, width, rate = recorder.record()
+    if data is None:
+        print("Recording failed or could not access audio device.")
+        sys.exit(1)
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    wav_filename = f"recording_{timestamp}.wav"
+    AudioProcessor.save_audio(data, rate, width, wav_filename)
+
+    transcript_filename = f"transcript_{timestamp}.txt"
+    AudioProcessor.transcribe_audio(data, rate, width, filename=transcript_filename)
+
+    show_now = input("Show waveform now? (y/N): ").strip().lower() == 'y'
+    if show_now:
+        AudioProcessor.show_waveform(data, rate, save_plot=False)
+    else:
+        save_plot = input("Save waveform image instead? (y/N): ").strip().lower() == 'y'
+        if save_plot:
+            AudioProcessor.show_waveform(data, rate, save_plot=True)
+
+    print("Done.")
